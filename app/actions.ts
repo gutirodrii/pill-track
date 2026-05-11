@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { siteUrl } from "@/lib/env";
 
 function readString(formData: FormData, key: string) {
   const value = formData.get(key);
@@ -37,19 +38,28 @@ async function getUserId() {
   return { supabase, userId: user.id };
 }
 
+async function getAuthCallbackUrl() {
+  const requestHeaders = await headers();
+  const origin = requestHeaders.get("origin");
+  const host = requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host");
+  const proto = requestHeaders.get("x-forwarded-proto") ?? (host?.startsWith("localhost") ? "http" : "https");
+  const requestOrigin = origin ?? (host ? `${proto}://${host}` : undefined);
+
+  return `${siteUrl ?? requestOrigin ?? "http://localhost:3000"}/auth/callback`;
+}
+
 export async function signInWithEmail(formData: FormData) {
   const email = readString(formData, "email").toLowerCase();
   if (!email) {
     redirect("/");
   }
 
-  const origin = (await headers()).get("origin") ?? "http://localhost:3000";
   const supabase = await createClient();
 
   await supabase.auth.signInWithOtp({
     email,
     options: {
-      emailRedirectTo: `${origin}/auth/callback`
+      emailRedirectTo: await getAuthCallbackUrl()
     }
   });
 
