@@ -56,12 +56,17 @@ export async function signInWithEmail(formData: FormData) {
 
   const supabase = await createClient();
 
-  await supabase.auth.signInWithOtp({
+  const { error } = await supabase.auth.signInWithOtp({
     email,
     options: {
       emailRedirectTo: await getAuthCallbackUrl()
     }
   });
+
+  if (error) {
+    console.error("Supabase magic link error:", error.message);
+    redirect("/?authError=1");
+  }
 
   redirect("/?sent=1");
 }

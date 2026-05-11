@@ -1,4 +1,4 @@
-import { CheckCircle2, Mail, Pill } from "lucide-react";
+import { AlertCircle, CheckCircle2, Mail, Pill } from "lucide-react";
 import { signInWithEmail, signOut } from "@/app/actions";
 import PillTrackApp from "@/components/pill-track-app";
 import { hasSupabaseEnv } from "@/lib/env";
@@ -9,6 +9,7 @@ export const dynamic = "force-dynamic";
 
 type PageProps = {
   searchParams?: Promise<{
+    authError?: string;
     sent?: string;
   }>;
 };
@@ -26,7 +27,7 @@ export default async function Home({ searchParams }: PageProps) {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    return <Login sent={params?.sent === "1"} />;
+    return <Login authError={params?.authError === "1"} sent={params?.sent === "1"} />;
   }
 
   const [medicationsResult, logsResult] = await Promise.all([
@@ -53,7 +54,7 @@ export default async function Home({ searchParams }: PageProps) {
   );
 }
 
-function Login({ sent }: { sent: boolean }) {
+function Login({ authError, sent }: { authError: boolean; sent: boolean }) {
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col justify-between px-5 py-6">
       <div className="pt-10">
@@ -67,6 +68,12 @@ function Login({ sent }: { sent: boolean }) {
       </div>
 
       <section className="rounded-lg border border-ink/10 bg-white/86 p-4 shadow-soft backdrop-blur">
+        {authError ? (
+          <div className="mb-4 flex items-start gap-3 rounded-md bg-coral/10 p-3 text-sm text-coral">
+            <AlertCircle aria-hidden="true" className="mt-0.5 shrink-0" size={18} />
+            <p>No se pudo enviar el enlace. Revisa la configuración de autenticación en Supabase.</p>
+          </div>
+        ) : null}
         {sent ? (
           <div className="mb-4 flex items-start gap-3 rounded-md bg-mint p-3 text-sm text-leaf">
             <CheckCircle2 aria-hidden="true" className="mt-0.5 shrink-0" size={18} />
